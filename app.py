@@ -35,10 +35,22 @@ def ai():
 
     try:
         response = requests.post(
-            f"{base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
+    f"{base_url}/chat/completions",
+    headers={
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "gemma3:27b",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "api_key": api_key
+    },
+    timeout=30
+)
             },
             json={
                 "model": "gemma3:27b",
