@@ -19,6 +19,18 @@ def status():
         "time": datetime.now().isoformat()
     }), 200
 
+@app.route("/debug-env", methods=["GET"])
+def debug_env():
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    base_url = (os.getenv("OPENAI_BASE_URL") or "").strip()
+
+    return jsonify({
+        "has_api_key": bool(api_key),
+        "api_key_prefix": api_key[:6] if api_key else "",
+        "api_key_length": len(api_key),
+        "base_url": base_url
+    }), 200
+
 @app.route("/ai", methods=["POST"])
 def ai():
     data = request.get_json(silent=True) or {}
@@ -27,8 +39,8 @@ def ai():
     if not prompt:
         return jsonify({"error": "Chybi prompt"}), 400
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("OPENAI_BASE_URL", "https://kurim.ithope.eu/v1")
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    base_url = (os.getenv("OPENAI_BASE_URL") or "https://kurim.ithope.eu/v1").strip()
 
     if not api_key:
         return jsonify({"error": "Neni nastavena OPENAI_API_KEY"}), 500
@@ -58,7 +70,13 @@ def ai():
             timeout=30
         )
 
-        response.raise_for_status()
+        if not response.ok:
+            return jsonify({
+                "error": "AI sluzba vratila chybu",
+                "status_code": response.status_code,
+                "response_text": response.text
+            }), 500
+
         result = response.json()
         answer = result["choices"][0]["message"]["content"]
 
