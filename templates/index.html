@@ -2,30 +2,244 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Helpdesk</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+            backdrop-filter: blur(12px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.18);
+            color: #93c5fd;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 40px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            margin: 0 0 28px 0;
+            color: #cbd5e1;
+            font-size: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #e2e8f0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            resize: vertical;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 16px;
+            outline: none;
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        textarea::placeholder {
+            color: #94a3b8;
+        }
+
+        textarea:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96,165,250,0.18);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 14px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+        }
+
+        .primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(37,99,235,0.35);
+        }
+
+        .secondary {
+            background: rgba(255,255,255,0.08);
+            color: #e2e8f0;
+        }
+
+        .secondary:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .result-box {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .result-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #93c5fd;
+            margin-bottom: 10px;
+        }
+
+        #result {
+            white-space: pre-wrap;
+            color: #f8fafc;
+            line-height: 1.6;
+            min-height: 40px;
+        }
+
+        .footer {
+            margin-top: 18px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 640px) {
+            .card {
+                padding: 22px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            textarea {
+                min-height: 130px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>AI Helpdesk</h1>
+    <div class="container">
+        <div class="card">
+            <div class="badge">AI aplikace</div>
+            <h1>AI Helpdesk</h1>
+            <p class="subtitle">
+                Zadej otázku a aplikace ti vrátí odpověď od AI modelu gemma3:27b.
+            </p>
 
-    <input type="text" id="prompt" placeholder="Zadej dotaz..." style="width:300px;">
-    <button onclick="send()">Odeslat</button>
+            <label for="prompt">Tvůj dotaz</label>
+            <textarea id="prompt" placeholder="Např. Vysvětli mi jednoduše, co je Docker a k čemu se používá."></textarea>
 
-    <p id="result"></p>
+            <div class="actions">
+                <button class="primary" onclick="sendPrompt()">Odeslat dotaz</button>
+                <button class="secondary" onclick="clearPrompt()">Vymazat</button>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title">Odpověď</div>
+                <div id="result">Sem se zobrazí odpověď od AI.</div>
+            </div>
+
+            <div class="footer">
+                Autor: David Pantucek
+            </div>
+        </div>
+    </div>
 
     <script>
-        async function send() {
+        async function sendPrompt() {
             const prompt = document.getElementById("prompt").value;
+            const result = document.getElementById("result");
 
-            const res = await fetch("/ai", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ prompt: prompt })
-            });
+            if (!prompt.trim()) {
+                result.innerText = "Nejdřív napiš dotaz.";
+                return;
+            }
 
-            const data = await res.json();
-            document.getElementById("result").innerText = data.answer || data.error;
+            result.innerText = "Načítám odpověď...";
+
+            try {
+                const response = await fetch("/ai", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const data = await response.json();
+
+                if (data.answer) {
+                    result.innerText = data.answer;
+                } else if (data.error) {
+                    result.innerText = "Chyba: " + data.error;
+                } else {
+                    result.innerText = "Server nevrátil žádnou odpověď.";
+                }
+            } catch (error) {
+                result.innerText = "Chyba při komunikaci se serverem.";
+            }
+        }
+
+        function clearPrompt() {
+            document.getElementById("prompt").value = "";
+            document.getElementById("result").innerText = "Sem se zobrazí odpověď od AI.";
         }
     </script>
 </body>
