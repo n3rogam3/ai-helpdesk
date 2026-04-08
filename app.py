@@ -1,20 +1,15 @@
 from flask import Flask, request, jsonify, render_template
-from flask import Flask, request, jsonify
 import os
 import requests
 from datetime import datetime
-
-@app.route("/")
-def home():
-    return render_template("index.html")
 
 app = Flask(__name__)
 
 AUTHOR = "David Pantucek"
 
-@app.route("/ping", methods=["GET"])
-def ping():
-    return "pong", 200
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 @app.route("/status", methods=["GET"])
 def status():
@@ -22,18 +17,6 @@ def status():
         "status": "ok",
         "author": AUTHOR,
         "time": datetime.now().isoformat()
-    }), 200
-
-@app.route("/debug-env", methods=["GET"])
-def debug_env():
-    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
-    base_url = (os.getenv("OPENAI_BASE_URL") or "").strip()
-
-    return jsonify({
-        "has_api_key": bool(api_key),
-        "api_key_prefix": api_key[:6] if api_key else "",
-        "api_key_length": len(api_key),
-        "base_url": base_url
     }), 200
 
 @app.route("/ai", methods=["POST"])
@@ -86,9 +69,7 @@ def ai():
         answer = result["choices"][0]["message"]["content"]
 
         return jsonify({
-            "prompt": prompt,
-            "answer": answer,
-            "model": "gemma3:27b"
+            "answer": answer
         }), 200
 
     except requests.exceptions.RequestException as e:
