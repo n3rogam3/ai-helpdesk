@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Helpdesk</title>
+</head>
+<body>
+    <h1>AI Helpdesk</h1>
+
+    <input type="text" id="prompt" placeholder="Zadej dotaz..." style="width:300px;">
+    <button onclick="send()">Odeslat</button>
+
+    <p id="result"></p>
+
+    <script>
+        async function send() {
+            const prompt = document.getElementById("prompt").value;
+
+            const res = await fetch("/ai", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await res.json();
+            document.getElementById("result").innerText = data.answer || data.error;
+        }
+    </script>
+</body>
+</html>
