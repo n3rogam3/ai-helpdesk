@@ -1,7 +1,12 @@
+from flask import Flask, request, jsonify, render_template
 from flask import Flask, request, jsonify
 import os
 import requests
 from datetime import datetime
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 app = Flask(__name__)
 
