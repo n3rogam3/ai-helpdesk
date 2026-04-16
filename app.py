@@ -2,10 +2,33 @@ from flask import Flask, request, jsonify, render_template
 import os
 import requests
 from datetime import datetime
+import psycopg2
 
 app = Flask(__name__)
 
 AUTHOR = "David Pantucek"
+
+def get_db_connection():
+    database_url = os.getenv("DATABASE_URL")
+    return psycopg2.connect(database_url)
+
+def init_db():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ai_logs (
+                id SERIAL PRIMARY KEY,
+                prompt TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("DB init error:", e)
 
 @app.route("/")
 def home():
@@ -68,6 +91,19 @@ def ai():
         result = response.json()
         answer = result["choices"][0]["message"]["content"]
 
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO ai_logs (prompt, answer) VALUES (%s, %s)",
+                (prompt, answer)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("DB insert error:", e)
+
         return jsonify({
             "answer": answer
         }), 200
@@ -82,6 +118,8 @@ def ai():
             "error": "Neplatna odpoved od AI sluzby",
             "detail": str(e)
         }), 500
+
+init_db()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8081"))
